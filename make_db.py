@@ -28,25 +28,32 @@ def process_pages(db):
     )
 
     types = {
-            "by_metascore": ("""
+        "by_metascore": (
+            """
             INSERT INTO top_games(name, link, metascore) 
             VALUES (?, ?, ?) 
             ON CONFLICT(link) DO 
             UPDATE SET metascore=excluded.metascore;
-            """, int),
-            "by_userscore": ("""
+            """,
+            int,
+        ),
+        "by_userscore": (
+            """
             INSERT INTO top_games(name, link, userscore) 
             VALUES (?, ?, ?) 
             ON CONFLICT(link) DO 
             UPDATE SET userscore=excluded.userscore;
-            """, lambda x: int(float(x)*10)),
-            }
+            """,
+            lambda x: int(float(x) * 10),
+        ),
+    }
     for type, page in db.execute("SELECT type, content FROM pages;"):
         for tr in get_all_table_rows(page):
             query, score_converter = types[type]
             name, link, score = extract_data(tr, score_converter)
             db.execute(query, (name, link, score))
     db.commit()
+
 
 def get_all_table_rows(page):
     """
@@ -69,10 +76,11 @@ def get_all_table_rows(page):
         for tr in table:
             yield tr
 
+
 def extract_data(tr, score_converter):
     """
     name:  /html/body/div[2]/div/div/div[1]/div[2]/div/div[1]/div/div[2]/table/tr[1]/td[2]/a/h3
-    link:  /html/body/div[2]/div/div/div[1]/div[2]/div/div[1]/div/div[2]/table/tr[1]/td[2]/a 
+    link:  /html/body/div[2]/div/div/div[1]/div[2]/div/div[1]/div/div[2]/table/tr[1]/td[2]/a
     score: /html/body/div[2]/div/div/div[1]/div[2]/div/div[1]/div/div[2]/table/tr[1]/td[2]/div[1]/a/div
     """
     name = tr.xpath("td[2]/a/h3")[0].text
